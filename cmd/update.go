@@ -40,7 +40,6 @@ func init() {
 func updateOdin(path string) {
 	fmt.Println("Pulling latest changes for Odin")
 	if !pullRepo(path) {
-		fmt.Println("Could not update repository. No changes made.")
 		return
 	}
 
@@ -50,7 +49,6 @@ func updateOdin(path string) {
 func updateOLS(path string) {
 	fmt.Println("Pulling latest changes for OLS")
 	if !pullRepo(path) {
-		fmt.Println("Could not update repository. No changes made.")
 		return
 	}
 
@@ -74,7 +72,7 @@ func pullRepo(path string) bool {
 	if err != nil {
 		if err == git.NoErrAlreadyUpToDate {
 			fmt.Println("Already up to date")
-			return true
+			return false
 		} else {
 			fmt.Printf("Failed to pull latest changes: %s\n", err)
 			return false
