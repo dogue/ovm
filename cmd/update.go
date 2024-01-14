@@ -29,7 +29,10 @@ var updateCmd = &cobra.Command{
 		olsPath := path.Join(basePath, "odin-lsp")
 
 		updateOdin(odinPath)
-		updateOLS(olsPath)
+
+		if checkExists(olsPath) {
+			updateOLS(olsPath)
+		}
 	},
 }
 
