@@ -18,7 +18,7 @@ var updateCmd = &cobra.Command{
 	Short: "Update an existing Odin/OLS installation",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		content, err := os.ReadFile(OVM_CFG)
+		content, err := os.ReadFile(ovmConfig)
 		if err != nil {
 			fmt.Printf("Failed to read base path from OVM config: %s\n", err)
 			return

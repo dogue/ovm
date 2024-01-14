@@ -16,7 +16,7 @@ var removeCmd = &cobra.Command{
 	Short: "Remove an existing Odin/OLS installation",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		content, err := os.ReadFile(OVM_CFG)
+		content, err := os.ReadFile(ovmConfig)
 		if err != nil {
 			fmt.Printf("Failed to read base path from config: %s\n", err)
 			return
@@ -41,7 +41,7 @@ var removeCmd = &cobra.Command{
 			fmt.Println("OLS directory removed")
 		}
 
-		err = os.RemoveAll(OVM_CFG)
+		err = os.RemoveAll(ovmConfig)
 		if err != nil {
 			fmt.Printf("Failed to remove OVM config file: %s\n", err)
 		} else {

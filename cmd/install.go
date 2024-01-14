@@ -21,7 +21,27 @@ const (
 	OLS_URL  = "https://github.com/DanielGavin/ols"
 )
 
-var OVM_CFG = path.Join(xdg.ConfigHome, "ovm")
+type Tool struct {
+	name        string
+	url         string
+	buildScript string
+	path        string
+	commitHash  string
+}
+
+var ovmConfig = path.Join(xdg.ConfigHome, "ovm")
+
+var Odin = Tool{
+	name:        "Odin",
+	url:         "https://github.com/odin-lang/Odin",
+	buildScript: "build_odin.sh",
+}
+
+var Ols = Tool{
+	name:        "OLS",
+	url:         "https://github.com/DanielGavin/ols",
+	buildScript: "build.sh",
+}
 
 // installCmd represents the install command
 var installCmd = &cobra.Command{
@@ -35,48 +55,52 @@ var installCmd = &cobra.Command{
 		installLsp, _ := cmd.Flags().GetBool("lsp")
 
 		basePath, _ = filepath.Abs(basePath)
-		odinPath := fmt.Sprintf("%s/odin", basePath)
-		olsPath := fmt.Sprintf("%s/odin-lsp", basePath)
+		Odin.path = filepath.Join(basePath, "odin")
+		Ols.path = filepath.Join(basePath, "odin-lsp")
 
-		err := os.WriteFile(OVM_CFG, []byte(basePath), 0777)
+		err := os.WriteFile(ovmConfig, []byte(basePath), 0777)
 		if err != nil {
-			fmt.Printf("Failed to write base path to file at '%s': %s", OVM_CFG, err)
+			fmt.Printf("Failed to write base path to OVM config: %s", err)
 			return
 		}
 
-		if checkExists(odinPath) {
+		if checkExists(Odin.path) {
 			if !force {
-				fmt.Printf("Odin directory '%s' exists. Use -f/--force to overwrite\n", odinPath)
+				fmt.Printf("Odin directory '%s' exists. Use -f/--force to overwrite\n", Odin.path)
 				return
 			}
 
-			os.RemoveAll(odinPath)
+			os.RemoveAll(Odin.path)
 		}
 
-		fmt.Println("Cloning Odin repository")
-		cloneRepo(ODIN_URL, odinPath, odinVersion)
+		if odinVersion != "HEAD" {
+			Odin.commitHash = odinVersion
+		}
 
-		buildOdin(odinPath)
+		cloneRepo(Odin)
+		buildTool(Odin)
 
 		if installLsp {
 			olsVersion, _ := cmd.Flags().GetString("ols-version")
 
-			if checkExists(olsPath) {
+			if checkExists(Ols.path) {
 				if !force {
-					fmt.Printf("OLS directory '%s' exists. Use -f/--force to overwrite\n", olsPath)
+					fmt.Printf("OLS directory '%s' exists. Use -f/--force to overwrite\n", Ols.path)
 					return
 				}
 
-				os.RemoveAll(olsPath)
+				os.RemoveAll(Ols.path)
 			}
 
-			fmt.Println("Cloning OLS respository")
-			cloneRepo(OLS_URL, olsPath, olsVersion)
+			if olsVersion != "HEAD" {
+				Ols.commitHash = olsVersion
+			}
 
-			buildOLS(olsPath)
+			cloneRepo(Ols)
+			buildTool(Ols)
 		}
 
-		printPathHelp(installLsp, odinPath, olsPath)
+		printPathHelp(installLsp)
 	},
 }
 
@@ -100,41 +124,37 @@ func cleanUp(path string) {
 	os.Exit(1)
 }
 
-func cloneRepo(url string, path string, version string) {
+func cloneRepo(tool Tool) {
 	cloneOpts := &git.CloneOptions{
-		URL:           url,
-		Depth:         1,
+		URL:           tool.url,
 		ReferenceName: plumbing.Master,
 		Progress:      os.Stdout,
 	}
 
-	// regular clone with history if not using latest commit
-	if version != "HEAD" {
-		cloneOpts.Depth = 0
-	}
-
-	repo, err := git.PlainClone(path, false, cloneOpts)
+	fmt.Printf("Cloning %s repository\n", tool.name)
+	defer fmt.Println("Done!")
+	repo, err := git.PlainClone(tool.path, false, cloneOpts)
 	if err != nil {
 		fmt.Printf("Failed to clone repository: %s\n", err)
-		cleanUp(path)
+		cleanUp(tool.path)
 	}
 
 	// no need to checkout if using latest, bail
-	if version == "HEAD" {
+	if tool.commitHash == "" {
 		return
 	}
 
-	hash := plumbing.NewHash(version)
+	hash := plumbing.NewHash(tool.commitHash)
 	commit, err := repo.CommitObject(hash)
 	if err != nil {
 		fmt.Printf("Failed to find specified commit: %s\n", err)
-		cleanUp(path)
+		cleanUp(tool.path)
 	}
 
 	wt, err := repo.Worktree()
 	if err != nil {
 		fmt.Printf("Failed to retrieve worktree: %s\n", err)
-		cleanUp(path)
+		cleanUp(tool.path)
 	}
 
 	checkOutOpts := &git.CheckoutOptions{
@@ -144,7 +164,7 @@ func cloneRepo(url string, path string, version string) {
 	err = wt.Checkout(checkOutOpts)
 	if err != nil {
 		fmt.Printf("Failed to checkout specified commit: %s\n", err)
-		cleanUp(path)
+		cleanUp(tool.path)
 	}
 }
 
@@ -192,15 +212,31 @@ func buildOLS(path string) {
 	fmt.Println("Done!")
 }
 
-func printPathHelp(lspInstalled bool, odinPath string, olsPath string) {
-	// odinPath, _ = filepath.Abs(odinPath)
+func buildTool(tool Tool) {
+	cwd, _ := os.Getwd()
+	os.Chdir(tool.path)
+	defer os.Chdir(cwd)
 
+	cmdStr := filepath.Join(".", tool.buildScript)
+	build := exec.Command(cmdStr)
+
+	fmt.Printf("Building %s\n", tool.name)
+
+	err := build.Run()
+	if err != nil {
+		fmt.Printf("Failed to build %s: %s\n", tool.name, err)
+		return
+	}
+
+	fmt.Println("Done!")
+}
+
+func printPathHelp(lspInstalled bool) {
 	fmt.Println("Add the following to your shell config (.bash_profile, .zshrc, etc):")
-	fmt.Printf("export PATH=$PATH:%s", odinPath)
+	fmt.Printf("export PATH=$PATH:%s", Odin.path)
 
 	if lspInstalled {
-		// olsPath, _ = filepath.Abs(olsPath)
-		fmt.Printf(":%s", olsPath)
+		fmt.Printf(":%s", Ols.path)
 	}
 
 	fmt.Println()
