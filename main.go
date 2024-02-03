@@ -100,6 +100,11 @@ func main() {
 				}
 			}
 
+		case "upgrade", "u":
+			if err := ovm.Upgrade(); err != nil {
+				log.Fatal(err)
+			}
+
 		case "colors":
 			var prompt string
 			if ovm.Config.UseColor {

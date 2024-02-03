@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"archive/tar"
 	"archive/zip"
 	"errors"
 	"fmt"
@@ -35,7 +36,12 @@ func (o *OVM) Upgrade() error {
 		return err
 	}
 
-	download := fmt.Sprintf("ovm-%s-%s.zip", runtime.GOOS, runtime.GOARCH)
+	archive := "tar"
+	if runtime.GOOS == "windows" {
+		archive = "zip"
+	}
+
+	download := fmt.Sprintf("ovm-%s-%s.%s", runtime.GOOS, runtime.GOARCH, archive)
 	downloadUrl := fmt.Sprintf("https://github.com/dogue/ovm/releases/latest/download/%s", download)
 
 	resp, err := http.Get(downloadUrl)
@@ -44,7 +50,7 @@ func (o *OVM) Upgrade() error {
 	}
 	defer resp.Body.Close()
 
-	tempDownload, err := os.CreateTemp(o.baseDir, fmt.Sprintf("*.zip"))
+	tempDownload, err := os.CreateTemp(o.baseDir, fmt.Sprintf("*.%s", archive))
 	if err != nil {
 		return err
 	}
@@ -76,7 +82,7 @@ func (o *OVM) Upgrade() error {
 	}
 	defer os.RemoveAll(newTemp)
 
-	_, err = o.extractUpgrade(tempDownload.Name(), newTemp)
+	err = untar(tempDownload.Name(), newTemp)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -230,4 +236,48 @@ func resolveSymlink(symlink string) (string, error) {
 	}
 	return absolutePath, nil
 
+}
+
+func untar(tarball, target string) error {
+	log.Debug("untar", "tarball", tarball, "target", target)
+	reader, err := os.Open(tarball)
+	if err != nil {
+
+		return err
+	}
+	defer reader.Close()
+
+	tarReader := tar.NewReader(reader)
+
+	for {
+		header, err := tarReader.Next()
+
+		switch {
+		case err == io.EOF:
+			return nil
+		case err != nil:
+			return err
+		case header == nil:
+			continue
+		}
+
+		target := target + string(os.PathSeparator) + header.Name
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if _, err := os.Stat(target); err != nil {
+				if err := os.MkdirAll(target, 0755); err != nil {
+					return err
+				}
+			}
+		case tar.TypeReg:
+			writer, err := os.Create(target)
+			if err != nil {
+				return err
+			}
+			if _, err := io.Copy(writer, tarReader); err != nil {
+				return err
+			}
+			writer.Close()
+		}
+	}
 }
