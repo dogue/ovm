@@ -1,5 +1,8 @@
 ovm (Odin Version Manager) {{.Version}}
 © 2024-present Dogue (https://github.com/dogue)
+
+Adapted from ZVM
+© 2023-present Tristan Isham
 --------------------------------
 
 install, i [flags] <version>
