@@ -1,7 +1,5 @@
 # Odin Version Manager
 
----
-
 Odin Version Manager (ovm) is a tool for managing your Odin installs. With Odin
 being pre-1.0 the closest thing to a "regular release" are the monthly releases,
 and those are currently bugged on Linux. While OVM does require that you have
