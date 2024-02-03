@@ -1,0 +1,38 @@
+ovm (Odin Version Manager) {{.Version}}
+© 2024-present Dogue (https://github.com/dogue)
+--------------------------------
+
+install, i [flags] <version>
+  Use `install` or `i` to download and build a specific version of Odin.
+  To install the latest monthly release, use "latest".
+  To install the bleeding edge from the master branch, use "master".
+  To install Odin Language server, add the flag `--lsp` or `-l`. 
+
+use <version>
+  Use `use` to switch between versions of Odin.
+  Also available as `switch`.
+
+ls
+  Use `ls` to list all installed version of Odin.
+  To list remote versions of Odin available for download, add the flag `--remote` or `-r`.
+  Also available as `list`.
+
+remove, rm <version>
+  Use `remove` or `rm` to remove an installed version from your system.
+
+upgrade 
+  Use `upgrade` to update your OVM install
+
+version
+  Prints the version of OVM you have installed.
+
+colors
+  Prints whether output colors are enabled and asks if you'd like to toggle the option.
+
+help
+  Prints this message.
+
+------------- Flags -----------------
+-v / --verbose | Enable more informational output from OVM
+
+Looking for more help? https://github.com/dogue/ovm
