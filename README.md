@@ -82,7 +82,7 @@ manually, having to scoll around to find your appropriate version, decompress
 it, and install it on your `$PATH`. Or, you could install OVM and run
 `ovm i master` every time you want to update. `ovm` is a static binary under a
 permissive license. Whether you're on Windows, MacOS, Linux, a flavor of BSD,
-or Plan 9 `zvm` will let you install, switch between, and run multiple versions of Zig.
+or Plan 9 `ovm` will let you install, switch between, and run multiple versions of Odin.
 
 # Contributing and Notice
 
