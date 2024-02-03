@@ -23,22 +23,22 @@ func Initialize(verbose bool) *OVM {
 		home = "~"
 	}
 
-	ovm_path := filepath.Join(home, ".ovm")
-	if _, err := os.Stat(ovm_path); errors.Is(err, fs.ErrNotExist) {
+	ovmPath := filepath.Join(home, ".ovm")
+	if _, err := os.Stat(ovmPath); errors.Is(err, fs.ErrNotExist) {
 		if verbose {
-			fmt.Printf("OVM directory not found at `%s`, creating it now\n", ovm_path)
+			fmt.Printf("OVM directory not found at `%s`, creating it now\n", ovmPath)
 		}
 
-		if err := os.MkdirAll(filepath.Join(ovm_path, "self"), 0775); err != nil {
+		if err := os.MkdirAll(filepath.Join(ovmPath, "self"), 0775); err != nil {
 			log.Fatal(err)
 		}
 	}
 
 	ovm := &OVM{
-		baseDir: ovm_path,
+		baseDir: ovmPath,
 		Verbose: verbose,
 	}
-	ovm.Config.basePath = filepath.Join(ovm_path, "config.toml")
+	ovm.Config.basePath = filepath.Join(ovmPath, "config.toml")
 
 	if err := ovm.loadConfig(); err != nil {
 		if errors.Is(err, ErrNoConfig) {
@@ -46,9 +46,7 @@ func Initialize(verbose bool) *OVM {
 				fmt.Println("Config file not found. Creating default.")
 			}
 
-			ovm.Config = Config{
-				UseColor: true,
-			}
+			ovm.Config.UseColor = true
 
 			if err := ovm.Config.save(); err != nil {
 				log.Warn("Failed to create config.toml file", err)
