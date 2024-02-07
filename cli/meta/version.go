@@ -1,3 +1,3 @@
 package meta
 
-const VERSION = "0.0.3"
+const VERSION = "0.0.4"

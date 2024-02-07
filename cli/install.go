@@ -86,7 +86,12 @@ func (o *OVM) Install(version TargetVersion, installLsp bool) error {
 	fmt.Println(o.Colored("Build successful!\n", "green"))
 
 	odinBinary := filepath.Join(newPath, "odin")
-	o.createSymlink(odinBinary)
+	o.createSymlink(odinBinary, "bin")
+
+	coreLib := filepath.Join(newPath, "core")
+	o.createSymlink(coreLib, "collections")
+
+	o.linkCollections(version.Tag)
 
 	o.Config.ActiveVersion = version.Tag
 	if err := o.Config.save(); err != nil {
@@ -177,18 +182,18 @@ func (o *OVM) installOLS() error {
 	fmt.Println(o.Colored("Build successful!\n", "green"))
 
 	olsBinary := filepath.Join(newPath, "ols")
-	o.createSymlink(olsBinary)
+	o.createSymlink(olsBinary, "bin")
 
 	return nil
 }
 
-func (o *OVM) createSymlink(source string) {
-	binDir := filepath.Join(o.baseDir, "bin")
-	destination := filepath.Join(binDir, filepath.Base(source))
+func (o *OVM) createSymlink(source, dest string) {
+	parentDir := filepath.Join(o.baseDir, dest)
+	destination := filepath.Join(parentDir, filepath.Base(source))
 
-	if _, err := os.Stat(binDir); errors.Is(err, os.ErrNotExist) {
-		if err := os.MkdirAll(binDir, os.ModePerm); err != nil {
-			log.Fatal("Could not create bin directory", err)
+	if _, err := os.Stat(parentDir); errors.Is(err, os.ErrNotExist) {
+		if err := os.MkdirAll(parentDir, os.ModePerm); err != nil {
+			log.Fatal("Could not create directory", err)
 		}
 	}
 
@@ -294,4 +299,28 @@ func (o *OVM) buildSource(root, buildScript string, env []string) error {
 	}
 
 	return nil
+}
+
+func (o *OVM) linkCollections(version string) {
+	// version-specific directories
+	coreV := filepath.Join(o.baseDir, version, "core")
+	sharedV := filepath.Join(o.baseDir, version, "shared")
+	vendorV := filepath.Join(o.baseDir, version, "vendor")
+
+	// persistent shared collection
+	sharedP := filepath.Join(o.baseDir, "collections", "shared")
+
+	// create a persistent shared collection directory
+	// collections dir is used for symlinked core from installed version
+	if err := os.MkdirAll(sharedP, 0775); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := os.RemoveAll(sharedV); err != nil {
+		log.Fatal(err)
+	}
+
+	o.createSymlink(coreV, "collections")
+	o.createSymlink(vendorV, "collections")
+	o.createSymlink(sharedP, version)
 }

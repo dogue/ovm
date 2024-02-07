@@ -31,7 +31,9 @@ func (o *OVM) Use(version string) error {
 
 func (o *OVM) setBin(version string) error {
 	targetPath := filepath.Join(o.baseDir, version, "odin")
-	o.createSymlink(targetPath)
+	o.createSymlink(targetPath, "bin")
+
+	o.linkCollections(version)
 
 	o.Config.ActiveVersion = version
 	if err := o.Config.save(); err != nil {
