@@ -19,7 +19,6 @@ install_latest() {
      # Do something under MacOS platform
 
         if command -v wget >/dev/null 2>&1; then
-    
             echo "wget is installed. Using wget..."
             wget -q --show-progress --max-redirect 5 -O ovm.tar "https://github.com/dogue/ovm/releases/latest/download/$1"
         else
@@ -34,9 +33,15 @@ install_latest() {
     elif [ $OS = "Linux" ]; then
      # Do something under GNU/Linux platform
         if command -v wget >/dev/null 2>&1; then
-    
             echo "wget is installed. Using wget..."
-            wget -q --show-progress --max-redirect 5 -O ovm.tar "https://github.com/dogue/ovm/releases/latest/download/$1"
+
+            if wget --version | grep -qi "wget2"; then
+                show_progress_flag="--force-progress"
+            else
+                show_progress_flag="--show-progress"
+            fi
+
+            wget -q $show_progress_flag --max-redirect 5 -O ovm.tar "https://github.com/dogue/ovm/releases/latest/download/$1"
         else
             echo "wget is not installed. Using curl..."
             curl -L --max-redirs 5 "https://github.com/dogue/ovm/releases/latest/download/$1" -o ovm.tar
